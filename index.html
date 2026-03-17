@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QQ群聊 - OpenClaw Agents</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #2e2e2e;
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+    
+    /* 左侧栏 - 群成员 */
+    .member-panel {
+      width: 220px;
+      background: #2e2e2e;
+      border-right: 1px solid #1e1e1e;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .member-panel-header {
+      padding: 12px;
+      background: #252525;
+      font-size: 14px;
+      color: #8a8a8a;
+      border-bottom: 1px solid #3a3a3a;
+    }
+    
+    .member-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+    
+    .member-group {
+      margin-bottom: 12px;
+    }
+    
+    .member-group-title {
+      padding: 8px 12px 4px;
+      font-size: 12px;
+      color: #666;
+    }
+    
+    .member-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .member-item:hover { background: #3a3a3a; }
+    
+    .member-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      margin-right: 10px;
+      object-fit: cover;
+      background: #4a9cd6;
+    }
+    
+    .member-name {
+      flex: 1;
+      font-size: 14px;
+      color: #fff;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    .member-role {
+      font-size: 11px;
+      color: #f5a623;
+      background: rgba(245, 166, 35, 0.15);
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    
+    /* 中间 - 聊天区域 */
+    .chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #eee;
+    }
+    
+    .chat-header {
+      padding: 12px 20px;
+      background: #fff;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .chat-title {
+      font-size: 16px;
+      font-weight: bold;
+      color: #333;
+    }
+    
+    .chat-info {
+      font-size: 12px;
+      color: #999;
+    }
+    
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+    
+    .message {
+      display: flex;
+      margin-bottom: 20px;
+    }
+    
+    .message-self {
+      flex-direction: row-reverse;
+    }
+    
+    .message-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 4px;
+      margin: 0 12px;
+      object-fit: cover;
+      background: #4a9cd6;
+    }
+    
+    .message-content {
+      max-width: 60%;
+    }
+    
+    .message-header {
+      display: flex;
+      align-items: baseline;
+      margin-bottom: 4px;
+    }
+    
+    .message-self .message-header {
+      flex-direction: row-reverse;
+    }
+    
+    .message-name {
+      font-size: 13px;
+      color: #4a9cd6;
+      font-weight: 500;
+      margin-right: 8px;
+    }
+    
+    .message-self .message-name {
+      color: #4a9cd6;
+      margin-right: 0;
+      margin-left: 8px;
+    }
+    
+    .message-time {
+      font-size: 11px;
+      color: #999;
+    }
+    
+    .message-bubble {
+      background: #fff;
+      padding: 10px 14px;
+      border-radius: 4px;
+      font-size: 14px;
+      color: #333;
+      line-height: 1.5;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    
+    .message-self .message-bubble {
+      background: #4a9cd6;
+      color: #fff;
+    }
+    
+    .message-tool {
+      background: #fff3e0;
+      border: 1px solid #ff9800;
+      color: #e65100;
+      padding: 10px 14px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    
+    .chat-input-area {
+      padding: 12px 20px;
+      background: #fff;
+      border-top: 1px solid #e0e0e0;
+    }
+    
+    .chat-input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      resize: none;
+      outline: none;
+      font-family: inherit;
+    }
+    
+    .chat-input:focus {
+      border-color: #4a9cd6;
+    }
+    
+    .chat-input:disabled {
+      background: #f5f5f5;
+      cursor: not-allowed;
+    }
+    
+    .chat-input-wrapper {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+    
+    .chat-input-wrapper .chat-input {
+      flex: 1;
+    }
+    
+    /* 右侧 - 功能面板 */
+    .action-panel {
+      width: 260px;
+      background: #f5f5f5;
+      border-left: 1px solid #ddd;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .action-header {
+      padding: 16px;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+      font-size: 15px;
+      font-weight: bold;
+      color: #333;
+    }
+    
+    .action-content {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+    }
+    
+    .action-section {
+      margin-bottom: 24px;
+    }
+    
+    .action-section-title {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+    
+    .bot-card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+    }
+    
+    .bot-card-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      margin-right: 12px;
+      object-fit: cover;
+      background: #4a9cd6;
+    }
+    
+    .bot-card-info {
+      flex: 1;
+    }
+    
+    .bot-card-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: #333;
+    }
+    
+    .bot-card-id {
+      font-size: 12px;
+      color: #999;
+    }
+    
+    .bot-card-actions {
+      display: flex;
+      gap: 6px;
+    }
+    
+    .btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+    
+    .btn-add {
+      background: #52c41a;
+      color: #fff;
+    }
+    .btn-add:hover { background: #45a317; }
+    
+    .btn-remove {
+      background: #ff4d4f;
+      color: #fff;
+    }
+    .btn-remove:hover { background: #e64345; }
+    
+    .btn-disabled {
+      background: #999;
+      color: #fff;
+      cursor: not-allowed;
+    }
+    
+    /* 群信息 */
+    .group-info {
+      background: #fff;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    
+    .group-info-title {
+      font-size: 14px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 12px;
+    }
+    
+    .group-info-item {
+      display: flex;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+    
+    .group-info-label {
+      width: 60px;
+      color: #999;
+    }
+    
+    .group-info-value {
+      flex: 1;
+      color: #333;
+    }
+    
+    /* 结果提示 */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 12px 24px;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 14px;
+      z-index: 1000;
+      display: none;
+    }
+    
+    .toast.show { display: block; }
+    .toast-success { background: #52c41a; }
+    .toast-error { background: #ff4d4f; }
+    .toast-info { background: #1890ff; }
+    
+    /* 空状态 */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #999;
+    }
+    
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <!-- 左侧 - 群成员 -->
+  <div class="member-panel">
+    <div class="member-panel-header">
+      群成员 (<span id="member-count">0</span>)
+    </div>
+    <div class="member-list" id="member-list">
+      <div class="empty-state">
+        <div class="empty-state-icon">👥</div>
+        <div>暂无成员</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 中间 - 聊天区域 -->
+  <div class="chat-area">
+    <div class="chat-header">
+      <div>
+        <div class="chat-title">OpenClaw Agents 群</div>
+        <div class="chat-info" id="group-info-text">群号: 暂无</div>
+      </div>
+    </div>
+    <div class="chat-messages" id="chat-messages">
+      <div class="message">
+        <img class="message-avatar" src="https://q1.qlogo.cn/g?b=qq&nk=10000&s=100" />
+        <div class="message-content">
+          <div class="message-header">
+            <span class="message-name">系统</span>
+            <span class="message-time">现在</span>
+          </div>
+          <div class="message-bubble message-tool">
+            欢迎来到 OpenClaw Agents 群聊！<br>
+            在右侧面板可以邀请或移出机器人。
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="chat-input-area">
+      <div class="chat-input-wrapper">
+        <textarea class="chat-input" id="message-input" rows="2" placeholder="输入消息..." disabled></textarea>
+        <button class="btn btn-add" onclick="sendMessage()" style="height: 60px;padding: 0 20px;">发送</button>
+      </div>
+      <button class="btn btn-primary" id="start-chat-btn" onclick="startChat()" style="margin-top: 10px; width: 100%; display: none;">🎤 开始聊天</button>
+    </div>
+  </div>
+  
+  <!-- 右侧 - 功能面板 -->
+  <div class="action-panel">
+    <div class="action-header">⚙️ 群管理</div>
+    <div class="action-content">
+      <!-- 群信息 -->
+      <div class="action-section">
+        <div class="action-section-title">📋 群信息</div>
+        <div class="group-info">
+          <div class="group-info-item">
+            <span class="group-info-label">群号:</span>
+            <span class="group-info-value" id="current-guild-id">未设置</span>
+          </div>
+          <div class="group-info-item">
+            <span class="group-info-label">成员:</span>
+            <span class="group-info-value" id="current-member-count">0</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <input type="text" id="guild-id-input" placeholder="输入群号" style="width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:4px;font-size:13px;">
+        </div>
+        <button class="btn btn-add" onclick="setGuildId()" style="width:100%;padding:10px;">✓ 设置群号</button>
+      </div>
+      
+      <!-- 可用机器人 -->
+      <div class="action-section">
+        <div class="action-section-title">🤖 可用机器人</div>
+        <div id="available-bots">
+          <div class="empty-state" style="padding:20px;">
+            加载中...
+          </div>
+        </div>
+      </div>
+      
+      <!-- 群内成员 -->
+      <div class="action-section">
+        <div class="action-section-title">👥 群内成员</div>
+        <div id="group-bots">
+          <div class="empty-state" style="padding:20px;">
+            暂无成员
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 提示 -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // 配置
+    const API_BASE = '';
+    let config = null;
+    let allBots = []; // 所有可用机器人
+    let groupBots = []; // 群内机器人
+    let currentGuildId = '';
+    
+    // 代理请求
+    async function gatewayFetch(path, options = {}) {
+      const url = `/proxy/${path.replace(/^\//, '')}`;
+      return fetch(url, {
+        ...options,
+        headers: { 'Content-Type': 'application/json', ...options.headers }
+      });
+    }
+    
+    // 初始化
+    async function init() {
+      await loadConfig();
+      await loadBots();
+      renderAvailableBots();
+      renderGroupBots();
+      connectWebSocket();
+    }
+    
+    // 连接WebSocket
+    function connectWebSocket() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const ws = new WebSocket(`${protocol}//${window.location.host}`);
+      
+      ws.onopen = function() {
+        console.log('[WebSocket] 连接成功');
+      };
+      
+      ws.onmessage = function(event) {
+        try {
+          const data = JSON.parse(event.data);
+          console.log('[WebSocket消息]', data);
+          
+          if (data.type === 'welcome_start') {
+            document.getElementById('message-input').disabled = true;
+            showToast(`正在欢迎新成员: ${data.addedAgents.map(a => a.name).join(', ')}`, 'info');
+          } else if (data.type === 'welcome_done') {
+            document.getElementById('message-input').disabled = !data.canUserSpeak;
+            if (data.canUserSpeak) {
+              showToast('欢迎完毕，可以发言了', 'success');
+              document.getElementById('message-input').focus();
+            }
+          } else if (data.type === 'agent_response') {
+            const resp = data.response;
+            if (resp && resp.content) {
+              addBotMessage(
+                resp.from,
+                data.agent.id,
+                data.agent.emoji,
+                resp.content
+              );
+            }
+            
+            if (data.done) {
+              showToast('对话结束', 'info');
+              document.getElementById('message-input').disabled = false;
+              document.getElementById('message-input').focus();
+            }
+          }
+        } catch (e) {
+          console.error('解析WebSocket消息失败:', e);
+        }
+      };
+      
+      ws.onerror = function(err) {
+        console.error('WebSocket错误:', err);
+      };
+      
+      ws.onclose = function() {
+        console.log('[WebSocket] 连接关闭，3秒后重连...');
+        setTimeout(connectWebSocket, 3000);
+      };
+    }
+    
+    // 加载配置
+    async function loadConfig() {
+      try {
+        const response = await fetch('/api/config');
+        if (response.ok) {
+          config = await response.json();
+          console.log('config loaded:', config);
+        } else {
+          console.error('加载配置失败:', response.status);
+        }
+      } catch (e) {
+        console.error('加载配置失败:', e);
+      }
+    }
+    
+    // 加载Agents列表
+    async function loadBots() {
+      console.log('config:', config);
+      
+      try {
+        // 从API获取agents信息
+        const response = await fetch('/api/agents');
+        if (response.ok) {
+          const agents = await response.json();
+          console.log('agents from API:', agents);
+          
+          allBots = agents.map(agent => ({
+            id: agent.id,
+            name: agent.name,
+            emoji: agent.emoji,
+            appId: agent.id,
+            enabled: true,
+            workspace: agent.workspace
+          }));
+          
+          console.log('allBots:', allBots);
+          return;
+        }
+      } catch (e) {
+        console.error('获取agents失败:', e);
+      }
+      
+      // 备用：从config获取
+      const agents = config?.agents?.list || [];
+      allBots = agents.map(agent => ({
+        id: agent.id,
+        name: agent.name || agent.id,
+        emoji: '🤖',
+        appId: agent.id,
+        enabled: true,
+        workspace: agent.workspace
+      }));
+    }
+    
+    // 渲染可用Agents
+    function renderAvailableBots() {
+      const container = document.getElementById('available-bots');
+      
+      if (allBots.length === 0) {
+        container.innerHTML = '<div class="empty-state">暂无Agents</div>';
+        return;
+      }
+      
+      container.innerHTML = allBots.map(bot => {
+        // 使用DiceBear生成机器人头像
+        const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${bot.id}`;
+        const isInGroup = groupBots.some(gb => gb.id === bot.id);
+        
+        return `
+        <div class="bot-card">
+          <img class="bot-card-avatar" src="${avatarUrl}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%234a9cd6%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2260%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2240%22>${bot.emoji || '🤖'}</text></svg>'" />
+          <div class="bot-card-info">
+            <div class="bot-card-name">${bot.emoji || ''} ${bot.name}</div>
+            <div class="bot-card-id">ID: ${bot.id}</div>
+          </div>
+          <div class="bot-card-actions">
+            ${isInGroup 
+              ? `<button class="btn btn-disabled" disabled>已加入</button>`
+              : `<button class="btn btn-add" onclick="inviteBot('${bot.id}')">+ 邀请</button>`
+            }
+          </div>
+        </div>
+        `;
+      }).join('');
+    }
+    
+    // 渲染群内成员
+    function renderGroupBots() {
+      const container = document.getElementById('group-bots');
+      
+      document.getElementById('member-count').textContent = groupBots.length;
+      document.getElementById('current-member-count').textContent = groupBots.length;
+      
+      if (groupBots.length === 0) {
+        container.innerHTML = '<div class="empty-state" style="padding:20px;">暂无成员</div>';
+        document.getElementById('member-list').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">👥</div>
+            <div>暂无成员</div>
+          </div>
+        `;
+        return;
+      }
+      
+      // 渲染右侧群内成员
+      container.innerHTML = groupBots.map(bot => {
+        const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${bot.id}`;
+        return `
+        <div class="bot-card">
+          <img class="bot-card-avatar" src="${avatarUrl}" onerror="this.style.background='#4a9cd6'" />
+          <div class="bot-card-info">
+            <div class="bot-card-name">${bot.emoji || ''} ${bot.name}</div>
+            <div class="bot-card-id">ID: ${bot.id}</div>
+          </div>
+          <div class="bot-card-actions">
+            <button class="btn btn-remove" onclick="removeBot('${bot.id}')">✕</button>
+          </div>
+        </div>
+        `;
+      }).join('');
+      
+      // 渲染左侧成员列表
+      document.getElementById('member-list').innerHTML = `
+        <div class="member-group">
+          <div class="member-group-title">Agents (${groupBots.length})</div>
+          ${groupBots.map(bot => {
+            const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${bot.id}`;
+            return `
+            <div class="member-item">
+              <img class="member-avatar" src="${avatarUrl}" onerror="this.style.background='#4a9cd6'" />
+              <span class="member-name">${bot.emoji || ''} ${bot.name}</span>
+              <span class="member-role">管理员</span>
+            </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+    
+    // 设置群号
+    function setGuildId() {
+      const input = document.getElementById('guild-id-input');
+      currentGuildId = input.value.trim();
+      
+      if (!currentGuildId) {
+        showToast('请输入群号', 'error');
+        return;
+      }
+      
+      document.getElementById('current-guild-id').textContent = currentGuildId;
+      document.getElementById('group-info-text').textContent = `群号: ${currentGuildId}`;
+      showToast('群号已设置', 'success');
+    }
+    
+    // 邀请Agent入群（模拟）
+    function inviteBot(botId) {
+      const bot = allBots.find(b => b.id === botId);
+      if (!bot) return;
+      
+      // 检查是否已经在群里
+      if (groupBots.some(gb => gb.id === botId)) {
+        showToast(`${bot.name} 已经在群里了`, 'info');
+        return;
+      }
+      
+      // 直接添加到群内列表
+      groupBots.push(bot);
+      renderGroupBots();
+      renderAvailableBots();
+      
+      // 添加系统消息
+      addSystemMessage(`${bot.emoji || ''} ${bot.name} 加入了群聊`);
+      showToast(`${bot.name} 已加入群聊`, 'success');
+    }
+    
+    // 移出Agent（模拟）
+    function removeBot(botId) {
+      const bot = groupBots.find(b => b.id === botId);
+      if (!bot) return;
+      
+      if (!confirm(`确定要将 ${bot.name} 移出群聊吗？`)) {
+        return;
+      }
+      
+      // 从群内列表移除
+      groupBots = groupBots.filter(b => b.id !== botId);
+      renderGroupBots();
+      renderAvailableBots();
+      
+      // 添加系统消息
+      addSystemMessage(`${bot.emoji || ''} ${bot.name} 被移出了群聊`);
+      showToast(`${bot.name} 已移出群聊`, 'success');
+    }
+    
+    // 添加系统消息
+    function addSystemMessage(text) {
+      const container = document.getElementById('chat-messages');
+      const time = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+      
+      container.innerHTML += `
+        <div class="message">
+          <img class="message-avatar" src="https://q1.qlogo.cn/g?b=qq&nk=10000&s=100" />
+          <div class="message-content">
+            <div class="message-header">
+              <span class="message-name">系统</span>
+              <span class="message-time">${time}</span>
+            </div>
+            <div class="message-bubble message-tool">
+              ${text}
+            </div>
+          </div>
+        </div>
+      `;
+      
+      container.scrollTop = container.scrollHeight;
+    }
+    
+    // 开始聊天（触发欢迎新成员）
+    async function startChat() {
+      try {
+        const response = await fetch('/api/group/welcome', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+        if (data.success) {
+          document.getElementById('start-chat-btn').style.display = 'none';
+        }
+      } catch (e) {
+        console.error('开始聊天失败:', e);
+        showToast('开始聊天失败', 'error');
+      }
+    }
+    
+    // 发送消息
+    async function sendMessage() {
+      const input = document.getElementById('message-input');
+      const content = input.value.trim();
+      
+      if (!content) return;
+      
+      if (groupBots.length === 0) {
+        showToast('请先邀请至少一个Agent入群', 'error');
+        return;
+      }
+      
+      // 先把群里agents设置到后端
+      try {
+        const agentsResponse = await fetch('/api/group/agents', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ agentIds: groupBots.map(b => b.id) })
+        });
+        const agentsData = await agentsResponse.json();
+        
+        // 检查是否需要欢迎新成员
+        if (agentsData.needsWelcome) {
+          document.getElementById('start-chat-btn').style.display = 'block';
+          input.disabled = true;
+          return;
+        }
+      } catch (e) {
+        console.error('设置agents失败:', e);
+      }
+      
+      // 添加用户消息
+      addUserMessage('你', content);
+      input.value = '';
+      
+      // 禁用输入
+      input.disabled = true;
+      
+      try {
+        // 调用API发送消息，随机选择agent响应
+        const response = await fetch('/api/group/message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            content: content,
+            fromUser: '用户'
+          })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          // 显示被选中的agent的响应
+          if (data.toAgent) {
+            // 显示所有响应（包括跟进循环的响应）
+            if (data.responses && data.responses.length > 0) {
+              for (const resp of data.responses) {
+                addBotMessage(
+                  resp.from,
+                  data.toAgent.id,
+                  data.toAgent.emoji,
+                  resp.content
+                );
+              }
+            } else if (data.response) {
+              // 兼容旧格式
+              addBotMessage(
+                data.toAgent.name, 
+                data.toAgent.id, 
+                data.toAgent.emoji, 
+                data.response
+              );
+            }
+            
+            showToast(`${data.toAgent.name} 回应了`, 'info');
+          }
+        } else {
+          const error = await response.text();
+          showToast('发送失败: ' + error, 'error');
+        }
+      } catch (e) {
+        console.error('发送消息失败:', e);
+        showToast('网络错误', 'error');
+      }
+      
+      // 启用输入
+      input.disabled = false;
+      input.focus();
+    }
+    
+    // 添加用户消息
+    function addUserMessage(name, content) {
+      const container = document.getElementById('chat-messages');
+      const time = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+      
+      container.innerHTML += `
+        <div class="message message-self">
+          <img class="message-avatar" src="https://q1.qlogo.cn/g?b=qq&nk=10001&s=100" />
+          <div class="message-content">
+            <div class="message-header">
+              <span class="message-name">${name}</span>
+              <span class="message-time">${time}</span>
+            </div>
+            <div class="message-bubble">
+              ${escapeHtml(content)}
+            </div>
+          </div>
+        </div>
+      `;
+      
+      container.scrollTop = container.scrollHeight;
+    }
+    
+    // 添加机器人消息
+    function addBotMessage(name, botId, emoji, content) {
+      const container = document.getElementById('chat-messages');
+      const time = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+      const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${botId}`;
+      
+      container.innerHTML += `
+        <div class="message">
+          <img class="message-avatar" src="${avatarUrl}" onerror="this.style.background='#4a9cd6'" />
+          <div class="message-content">
+            <div class="message-header">
+              <span class="message-name">${emoji || ''} ${name}</span>
+              <span class="message-time">${time}</span>
+            </div>
+            <div class="message-bubble">
+              ${escapeHtml(content)}
+            </div>
+          </div>
+        </div>
+      `;
+      
+      container.scrollTop = container.scrollHeight;
+    }
+    
+    // HTML转义
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    // 回车发送
+    document.getElementById('message-input').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+    
+    // 显示提示
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = 'toast toast-' + type + ' show';
+      
+      setTimeout(() => {
+        toast.className = 'toast';
+      }, 3000);
+    }
+    
+    // 启动
+    init();
+  </script>
+</body>
+</html>
