@@ -62,7 +62,15 @@ function loadOpenClawConfig() {
   const configPath = 'C:\\Users\\Administrator\\.openclaw\\openclaw.json';
   try {
     if (existsSync(configPath)) {
-      const content = readFileSync(configPath, 'utf-8');
+      let content = readFileSync(configPath, 'utf-8');
+      // 移除JSON注释（只移除行首的//注释，保留URL中的//）
+      content = content
+        .replace(/^\s*\/\/.*$/gm, '')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/,\s*}/g, '}')
+        .replace(/,\s*\]/g, ']');
+      // 移除无效的控制字符
+      content = content.replace(/[\x00-\x1F\x7F]/g, '');
       return JSON.parse(content);
     }
   } catch (e) {
