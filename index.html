@@ -1451,6 +1451,9 @@
     
     // 开始一轮
     async function startRound() {
+      // 隐藏之前的得分显示
+      document.getElementById('average-scores').style.display = 'none';
+      
       const target = document.getElementById('imitate-target').value.trim();
       const topic = document.getElementById('imitate-topic').value.trim();
       
@@ -1651,8 +1654,11 @@
       gameState.roundType = 'scoring';
       updateGameStatus();
       
+      // 显示当前所有玩家的得分
+      showCurrentScores(players);
+      
       // 等待显示分数后，淘汰最低分
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 3000));
       
       // 淘汰最低分
       const activePlayers = players.filter(id => !gameState.eliminated.includes(id));
@@ -1694,10 +1700,57 @@
       updateImitativeArena();
     }
     
+    // 显示当前得分（每轮结束后）
+    function showCurrentScores(allPlayers) {
+      const avgScoresContainer = document.getElementById('average-scores');
+      const avgScoresList = document.getElementById('average-scores-list');
+      const avgScoresTitle = avgScoresContainer.querySelector('.average-scores-title');
+      
+      // 修改标题
+      avgScoresTitle.textContent = '📊 当前得分';
+      
+      // 获取当前得分
+      const scoreData = [];
+      for (const playerId of allPlayers) {
+        const player = groupBots.find(b => b.id === playerId);
+        const totalScore = gameState.scores[playerId] || 0;
+        
+        scoreData.push({
+          id: playerId,
+          name: player?.name || '未知',
+          emoji: player?.emoji || '🤖',
+          score: totalScore
+        });
+      }
+      
+      // 按得分排序
+      scoreData.sort((a, b) => b.score - a.score);
+      
+      // 生成HTML
+      let html = '';
+      scoreData.forEach(data => {
+        const isEliminated = gameState.eliminated.includes(data.id);
+        const style = isEliminated ? 'text-decoration: line-through; opacity: 0.5;' : '';
+        html += `
+          <div class="average-score-item" style="${style}">
+            <span class="name">${data.emoji} ${data.name}</span>
+            <span class="score">${data.score}分</span>
+          </div>
+        `;
+      });
+      
+      avgScoresList.innerHTML = html;
+      avgScoresContainer.style.display = 'block';
+    }
+    
     // 显示平均得分
     function displayAverageScores(allPlayers) {
       const avgScoresContainer = document.getElementById('average-scores');
       const avgScoresList = document.getElementById('average-scores-list');
+      const avgScoresTitle = avgScoresContainer.querySelector('.average-scores-title');
+      
+      // 修改标题
+      avgScoresTitle.textContent = '📊 平均得分';
       
       // 计算平均得分
       const avgData = [];
