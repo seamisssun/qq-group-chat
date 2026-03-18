@@ -379,6 +379,224 @@
     .toast-error { background: #ff4d4f; }
     .toast-info { background: #1890ff; }
     
+    /* Tab切换 */
+    .tab-switcher {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+    }
+    
+    .tab-btn {
+      flex: 1;
+      padding: 8px 16px;
+      border: none;
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    
+    .tab-btn:hover {
+      background: rgba(255,255,255,0.2);
+    }
+    
+    .tab-btn.active {
+      background: #4a9cd6;
+    }
+    
+    .tab-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    /* 模仿游戏界面 */
+    .imitative-arena {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      overflow: hidden;
+    }
+    
+    .imitative-center {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: rgba(74, 156, 214, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid rgba(74, 156, 214, 0.5);
+    }
+    
+    .imitative-center-text {
+      font-size: 32px;
+    }
+    
+    .imitative-agent {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transform: translate(-50%, -50%);
+    }
+    
+    .imitative-agent-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: 3px solid #4a9cd6;
+      background: #fff;
+    }
+    
+    .imitative-agent-name {
+      margin-top: 8px;
+      color: #fff;
+      font-size: 12px;
+      background: rgba(0,0,0,0.5);
+      padding: 2px 8px;
+      border-radius: 10px;
+      white-space: nowrap;
+    }
+    
+    .imitative-controls {
+      padding: 12px;
+      background: rgba(0,0,0,0.3);
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .imitative-info {
+      text-align: center;
+      color: #aaa;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    
+    .imitative-game-inputs {
+      padding: 12px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 8px;
+    }
+    
+    .imitative-input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    
+    .imitative-input-row input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #444;
+      border-radius: 4px;
+      background: #222;
+      color: #fff;
+      font-size: 14px;
+    }
+    
+    .imitative-input-row input::placeholder {
+      color: #666;
+    }
+    
+    .imitative-game-status {
+      padding: 12px;
+    }
+    
+    /* 模仿表演气泡 */
+    .performance-bubble {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 20px;
+      padding: 20px 25px;
+      max-width: 350px;
+      min-width: 250px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      z-index: 100;
+      animation: bubblePopIn 0.3s ease-out;
+    }
+    
+    @keyframes bubblePopIn {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5);
+      }
+      100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+    
+    @keyframes bubblePopOut {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5);
+      }
+    }
+    
+    .performance-bubble-header {
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    
+    .performance-performer {
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 6px 16px;
+      border-radius: 20px;
+    }
+    
+    .performance-bubble-content {
+      font-size: 15px;
+      color: #fff;
+      line-height: 1.6;
+      text-align: center;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    
+    .imitative-round-info {
+      text-align: center;
+      color: #4a9cd6;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+    
+    .imitative-scores {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+    }
+    
+    .imitative-score-item {
+      background: rgba(74, 156, 214, 0.2);
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 12px;
+      color: #fff;
+    }
+    
+    .imitative-score-item.eliminated {
+      background: rgba(255, 77, 79, 0.2);
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+    
     /* 空状态 */
     .empty-state {
       text-align: center;
@@ -409,32 +627,72 @@
   <!-- 中间 - 聊天区域 -->
   <div class="chat-area">
     <div class="chat-header">
-      <div>
-        <div class="chat-title">OpenClaw Agents 群</div>
-        <div class="chat-info" id="group-info-text">群号: 暂无</div>
+      <div class="tab-switcher">
+        <button class="tab-btn active" data-tab="chatroom" onclick="switchTab('chatroom')">💬 聊天室</button>
+        <button class="tab-btn" data-tab="imitative" onclick="switchTab('imitative')">🎭 模仿游戏</button>
       </div>
     </div>
-    <div class="chat-messages" id="chat-messages">
-      <div class="message">
-        <img class="message-avatar" src="https://q1.qlogo.cn/g?b=qq&nk=10000&s=100" />
-        <div class="message-content">
-          <div class="message-header">
-            <span class="message-name">系统</span>
-            <span class="message-time">现在</span>
-          </div>
-          <div class="message-bubble message-tool">
-            欢迎来到 OpenClaw Agents 群聊！<br>
-            在右侧面板可以邀请或移出机器人。
+    
+    <!-- 聊天室界面 -->
+    <div class="tab-content" id="tab-chatroom">
+      <div class="chat-header">
+        <div>
+          <div class="chat-title">OpenClaw Agents 群</div>
+          <div class="chat-info" id="group-info-text">群号: 暂无</div>
+        </div>
+      </div>
+      <div class="chat-messages" id="chat-messages">
+        <div class="message">
+          <img class="message-avatar" src="https://q1.qlogo.cn/g?b=qq&nk=10000&s=100" />
+          <div class="message-content">
+            <div class="message-header">
+              <span class="message-name">系统</span>
+              <span class="message-time">现在</span>
+            </div>
+            <div class="message-bubble message-tool">
+              欢迎来到 OpenClaw Agents 群聊！<br>
+              在右侧面板可以邀请或移出机器人。
+            </div>
           </div>
         </div>
       </div>
-    </div>
-    <div class="chat-input-area">
-      <div class="chat-input-wrapper">
-        <textarea class="chat-input" id="message-input" rows="2" placeholder="输入消息..." disabled></textarea>
-        <button class="btn btn-add" onclick="sendMessage()" style="height: 60px;padding: 0 20px;">发送</button>
+      <div class="chat-input-area">
+        <div class="chat-input-wrapper">
+          <textarea class="chat-input" id="message-input" rows="2" placeholder="输入消息..." disabled></textarea>
+          <button class="btn btn-add" onclick="sendMessage()" style="height: 60px;padding: 0 20px;">发送</button>
+        </div>
+        <button class="btn btn-primary" id="start-chat-btn" onclick="startChat()" style="margin-top: 10px; width: 100%; display: none;">人员准备完毕</button>
       </div>
-      <button class="btn btn-primary" id="start-chat-btn" onclick="startChat()" style="margin-top: 10px; width: 100%; display: none;">人员准备完毕</button>
+    </div>
+    
+    <!-- 模仿游戏界面 -->
+    <div class="tab-content" id="tab-imitative" style="display: none;">
+      <div class="imitative-arena" id="imitative-arena">
+        <div class="imitative-center">
+          <div class="imitative-center-text">🎯</div>
+        </div>
+      </div>
+      <!-- 模仿表演气泡显示区域 -->
+      <div class="performance-bubble" id="performance-bubble" style="display: none;">
+        <div class="performance-bubble-header">
+          <span class="performance-performer" id="performance-performer"></span>
+        </div>
+        <div class="performance-bubble-content" id="performance-bubble-content"></div>
+      </div>
+      <div class="imitative-controls">
+        <div class="imitative-info" id="imitative-info">邀请成员加入游戏...</div>
+        <div class="imitative-game-inputs" id="imitative-game-inputs" style="display: none;">
+          <div class="imitative-input-row">
+            <input type="text" id="imitate-target" placeholder="模仿对象（如：特朗普）" />
+            <input type="text" id="imitate-topic" placeholder="话题（如：如何拯救地球）" />
+          </div>
+          <button class="btn btn-primary" id="start-round-btn" onclick="startRound()">开始一轮</button>
+        </div>
+        <div class="imitative-game-status" id="imitative-game-status" style="display: none;">
+          <div class="imitative-round-info" id="imitative-round-info"></div>
+          <div class="imitative-scores" id="imitative-scores"></div>
+        </div>
+      </div>
     </div>
   </div>
   
@@ -743,6 +1001,9 @@
       
       // 通知后端更新群里agents
       updateGroupAgents();
+      
+      // 更新COS游戏界面
+      updateImitativeArena();
     }
     
     // 移出Agent（模拟）
@@ -765,6 +1026,9 @@
       
       // 通知后端更新群里agents
       updateGroupAgents();
+      
+      // 更新COS游戏界面
+      updateCosplayArena();
     }
     
     // 通知后端更新群里agents
@@ -987,6 +1251,371 @@
         sendMessage();
       }
     });
+    
+    // Tab切换
+    function switchTab(tab) {
+      const tabs = document.querySelectorAll('.tab-btn');
+      tabs.forEach(t => t.classList.remove('active'));
+      
+      const targetTab = document.querySelector(`.tab-btn[data-tab="${tab}"]`);
+      if (targetTab) targetTab.classList.add('active');
+      
+      const contents = document.querySelectorAll('.tab-content');
+      contents.forEach(c => c.style.display = 'none');
+      
+      const targetContent = document.getElementById(`tab-${tab}`);
+      if (targetContent) targetContent.style.display = 'flex';
+      
+      if (tab === 'imitative') {
+        updateImitativeArena();
+      }
+    }
+    
+    // 游戏状态
+    let gameState = {
+      players: [],
+      round: 0,
+      currentSpeaker: 0,
+      scores: {},
+      eliminated: [],
+      currentTarget: '',
+      currentTopic: '',
+      roundType: 'waiting' // waiting, performing, scoring, finished
+    };
+    
+    // 更新模仿游戏 arena
+    function updateImitativeArena() {
+      const arena = document.getElementById('imitative-arena');
+      const info = document.getElementById('imitative-info');
+      const gameInputs = document.getElementById('imitative-game-inputs');
+      const gameStatus = document.getElementById('imitative-game-status');
+      
+      // 清除旧的agent元素
+      const oldAgents = arena.querySelectorAll('.imitative-agent');
+      oldAgents.forEach(a => a.remove());
+      
+      if (!groupBots || groupBots.length < 2) {
+        info.textContent = '至少需要2位成员才能开始游戏';
+        gameInputs.style.display = 'none';
+        gameStatus.style.display = 'none';
+        return;
+      }
+      
+      info.textContent = `${groupBots.length} 位成员已加入游戏`;
+      
+      // 显示游戏输入框
+      if (gameState.roundType === 'waiting' || gameState.roundType === 'finished') {
+        gameInputs.style.display = 'block';
+        gameStatus.style.display = 'none';
+      } else {
+        gameInputs.style.display = 'none';
+        gameStatus.style.display = 'block';
+      }
+      
+      // 计算圆的位置
+      const centerX = 50;
+      const centerY = 50;
+      const radius = 35; // 百分比
+      const total = groupBots.length;
+      
+      groupBots.forEach((bot, index) => {
+        const angle = (2 * Math.PI * index) / total - Math.PI / 2;
+        const x = centerX + radius * Math.cos(angle);
+        const y = centerY + radius * Math.sin(angle);
+        
+        const agentEl = document.createElement('div');
+        agentEl.className = 'imitative-agent' + (gameState.eliminated.includes(bot.id) ? ' eliminated' : '');
+        agentEl.style.left = `${x}%`;
+        agentEl.style.top = `${y}%`;
+        
+        const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${bot.id}`;
+        
+        agentEl.innerHTML = `
+          <img class="imitative-agent-avatar" src="${avatarUrl}" onerror="this.style.background='#4a9cd6'" />
+          <div class="imitative-agent-name">${bot.emoji || ''} ${bot.name}</div>
+        `;
+        
+        arena.appendChild(agentEl);
+      });
+      
+      // 更新游戏状态显示
+      updateGameStatus();
+    }
+    
+    // 更新游戏状态显示
+    function updateGameStatus() {
+      const roundInfo = document.getElementById('imitative-round-info');
+      const scoresDiv = document.getElementById('imitative-scores');
+      
+      if (gameState.roundType === 'waiting') {
+        roundInfo.textContent = `第 ${gameState.round} 轮 - 等待开始`;
+      } else if (gameState.roundType === 'performing') {
+        const currentPlayer = groupBots.find(b => b.id === gameState.players[gameState.currentSpeaker]);
+        roundInfo.textContent = `第 ${gameState.round} 轮 - ${currentPlayer?.name || '?'} 正在表演`;
+      } else if (gameState.roundType === 'scoring') {
+        roundInfo.textContent = `第 ${gameState.round} 轮 - 评分中`;
+      } else if (gameState.roundType === 'finished') {
+        if (gameState.players.length === 3) {
+          roundInfo.textContent = '🏆 冠亚季军已产生！';
+        } else {
+          roundInfo.textContent = '游戏结束';
+        }
+      }
+      
+      // 显示分数
+      scoresDiv.innerHTML = '';
+      groupBots.forEach(bot => {
+        if (!gameState.eliminated.includes(bot.id)) {
+          const score = gameState.scores[bot.id] || 0;
+          const item = document.createElement('div');
+          item.className = 'imitative-score-item';
+          item.textContent = `${bot.emoji || ''} ${bot.name}: ${score}分`;
+          scoresDiv.appendChild(item);
+        }
+      });
+    }
+    
+    // 开始一轮
+    async function startRound() {
+      const target = document.getElementById('imitate-target').value.trim();
+      const topic = document.getElementById('imitate-topic').value.trim();
+      
+      if (!target || !topic) {
+        showToast('请输入模仿对象和话题', 'error');
+        return;
+      }
+      
+      if (groupBots.length < 2) {
+        showToast('至少需要2位成员', 'error');
+        return;
+      }
+      
+      // 初始化游戏
+      if (gameState.round === 0 || gameState.roundType === 'finished') {
+        gameState.round = 1;
+        gameState.players = groupBots.map(b => b.id);
+        gameState.scores = {};
+        gameState.eliminated = [];
+        groupBots.forEach(b => {
+          gameState.scores[b.id] = 0;
+        });
+      }
+      
+      gameState.currentTarget = target;
+      gameState.currentTopic = topic;
+      gameState.roundType = 'performing';
+      gameState.currentSpeaker = 0;
+      
+      updateImitativeArena();
+      
+      // 逐个让agent表演
+      await performRound(target, topic);
+    }
+    
+    // 执行一轮表演
+    async function performRound(target, topic) {
+      const players = gameState.players.filter(id => !gameState.eliminated.includes(id));
+      
+      // 保持在模仿游戏界面
+      switchTab('imitative');
+      
+      for (let i = 0; i < players.length; i++) {
+        gameState.currentSpeaker = i;
+        updateGameStatus();
+        
+        const playerId = players[i];
+        const player = groupBots.find(b => b.id === playerId);
+        
+        // 显示表演气泡
+        const bubble = document.getElementById('performance-bubble');
+        const performerSpan = document.getElementById('performance-performer');
+        const contentDiv = document.getElementById('performance-bubble-content');
+        
+        performerSpan.textContent = `${player?.emoji || ''} ${player?.name || '未知'} 正在模仿...`;
+        contentDiv.textContent = '等待表演...';
+        bubble.style.display = 'block';
+        
+        // 调用后端API让agent表演（带重试）
+        let responseText = null;
+        let attempts = 0;
+        const maxAttempts = 3;
+        
+        while (!responseText && attempts < maxAttempts) {
+          attempts++;
+          try {
+            const response = await fetch('/api/game/imitate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                agentId: playerId,
+                target: target,
+                topic: topic,
+                performerName: player?.name || '未知'
+              })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success && data.response) {
+              responseText = data.response;
+              // 更新气泡内容
+              performerSpan.textContent = `${player?.emoji || ''} ${player?.name || '未知'}`;
+              contentDiv.textContent = responseText;
+            } else if (data.error || (data.response && data.response.toLowerCase().includes('completed'))) {
+              console.log(`[表演重试] ${player?.name} 第${attempts}次尝试`);
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+          } catch (e) {
+            console.error('表演失败:', e);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        }
+        
+        if (!responseText) {
+          performerSpan.textContent = `${player?.emoji || ''} ${player?.name || '未知'}`;
+          contentDiv.textContent = '（表演失败）';
+        }
+        
+        // 等待一段时间再继续下一个
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // 隐藏气泡，为下一个做准备
+        bubble.style.display = 'none';
+      }
+      
+      // 表演完毕，进入评分阶段
+      gameState.roundType = 'scoring';
+      updateGameStatus();
+      
+      // 切换回模仿游戏界面
+      switchTab('imitative');
+      
+      // 让其他agent打分
+      await scoringRound(players, target, topic);
+    }
+    
+    // 评分阶段
+    async function scoringRound(players, target, topic) {
+      const allPlayers = [...players];
+      
+      // 保持在模仿游戏界面
+      switchTab('imitative');
+      
+      const bubble = document.getElementById('performance-bubble');
+      const performerSpan = document.getElementById('performance-performer');
+      const contentDiv = document.getElementById('performance-bubble-content');
+      
+      for (let i = 0; i < allPlayers.length; i++) {
+        const scorerId = allPlayers[i];
+        const scorer = groupBots.find(b => b.id === scorerId);
+        
+        // 获取其他未被淘汰的玩家的表演
+        const targets = allPlayers.filter(id => id !== scorerId && !gameState.eliminated.includes(id));
+        
+        for (const targetId of targets) {
+          const targetBot = groupBots.find(b => b.id === targetId);
+          
+          // 显示评分气泡
+          performerSpan.textContent = `${scorer?.emoji || ''} ${scorer?.name || '未知'} 正在打分...`;
+          contentDiv.textContent = `给 ${targetBot?.name || '未知'} 打分中...`;
+          bubble.style.display = 'block';
+          
+          // 调用后端API打分（带重试）
+          let scoreResult = null;
+          let attempts = 0;
+          const maxAttempts = 3;
+          
+          while (scoreResult === null && attempts < maxAttempts) {
+            attempts++;
+            try {
+              const response = await fetch('/api/game/score', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  scorerId: scorerId,
+                  targetId: targetId,
+                  targetName: targetBot?.name || '未知',
+                  scorerName: scorer?.name || '未知',
+                  target: target,
+                  topic: topic
+                })
+              });
+              
+              const data = await response.json();
+              
+              if (data.success && data.score !== undefined) {
+                scoreResult = data.score;
+                gameState.scores[targetId] = (gameState.scores[targetId] || 0) + scoreResult;
+                
+                // 显示评分结果
+                performerSpan.textContent = `${scorer?.emoji || ''} ${scorer?.name || '未知'}`;
+                contentDiv.textContent = `给 ${targetBot?.name || '未知'} 打分: ${scoreResult}分`;
+              } else if (data.error || (data.response && data.response.toLowerCase().includes('completed'))) {
+                console.log(`[打分重试] ${scorer?.name} 给 ${targetBot?.name} 第${attempts}次尝试`);
+                await new Promise(resolve => setTimeout(resolve, 1000));
+              }
+            } catch (e) {
+              console.error('打分失败:', e);
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+          }
+          
+          if (scoreResult === null) {
+            performerSpan.textContent = `${scorer?.emoji || ''} ${scorer?.name || '未知'}`;
+            contentDiv.textContent = `给 ${targetBot?.name || '未知'} 打分: （打分失败）`;
+          }
+          
+          // 等待一段时间
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+          // 隐藏气泡
+          bubble.style.display = 'none';
+        }
+      }
+      
+      // 表演完毕，进入评分阶段
+      gameState.roundType = 'scoring';
+      updateGameStatus();
+      
+      // 等待显示分数后，淘汰最低分
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // 淘汰最低分
+      const activePlayers = players.filter(id => !gameState.eliminated.includes(id));
+      const scores = activePlayers.map(id => ({ id, score: gameState.scores[id] || 0 }));
+      scores.sort((a, b) => a.score - b.score);
+      
+      if (scores.length > 3) {
+        const eliminated = scores[0];
+        gameState.eliminated.push(eliminated.id);
+        showToast(`${groupBots.find(b => b.id === eliminated.id)?.name} 被淘汰了！`, 'info');
+      }
+      
+      gameState.round++;
+      gameState.roundType = 'waiting';
+      
+      // 检查是否结束
+      const remaining = activePlayers.length - (gameState.eliminated.includes(scores[0].id) ? 1 : 0);
+      if (remaining <= 3) {
+        gameState.roundType = 'finished';
+        
+        // 排序得出冠亚季军
+        const finalScores = scores.filter(s => !gameState.eliminated.includes(s.id))
+          .sort((a, b) => b.score - a.score);
+        
+        let resultText = '🏆 最终排名：\n';
+        finalScores.forEach((s, idx) => {
+          const medals = ['🥇', '🥈', '🥉'];
+          const name = groupBots.find(b => b.id === s.id)?.name || '未知';
+          resultText += `${medals[idx] || ' '} ${name}: ${s.score}分\n`;
+        });
+        
+        addSystemMessage(resultText);
+        showToast('游戏结束！', 'success');
+      }
+      
+      updateImitativeArena();
+    }
     
     // 显示提示
     function showToast(message, type = 'info') {

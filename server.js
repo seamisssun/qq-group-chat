@@ -703,6 +703,98 @@ app.post('/api/group/message', async (req, res) => {
 
 });
 
+// API: 模仿表演
+app.post('/api/game/imitate', async (req, res) => {
+  const { agentId, target, topic, performerName } = req.body;
+  
+  if (!agentId || !target || !topic) {
+    return res.json({ success: false, error: '缺少必要参数' });
+  }
+  
+  try {
+    const message = `"请用${target}的语气和风格，模仿${target}的口吻，围绕"${topic}"这个话题，发表一段100字以内的模仿言论。不要包含动作描述。"`;
+    const command = `openclaw agent --agent ${agentId} --message ${message} --deliver`;
+    console.log('[模仿表演]', command);
+    
+    const { stdout, stderr } = await execAsync(command, {
+      encoding: 'utf-8',
+      timeout: 120000,
+      maxBuffer: 10 * 1024 * 1024
+    });
+    
+    let response = stdout ? stdout.trim() : '';
+    
+    // 如果返回completed，重试
+    if (response.toLowerCase().includes('completed')) {
+      console.log('[模仿表演返回completed，重试]');
+      const retryResult = await execAsync(command, {
+        encoding: 'utf-8',
+        timeout: 120000,
+        maxBuffer: 10 * 1024 * 1024
+      });
+      response = retryResult.stdout ? retryResult.stdout.trim() : response;
+    }
+    
+    res.json({ success: true, response });
+  } catch (error) {
+    console.error('[模仿表演失败]', error.message);
+    res.json({ success: false, error: error.message });
+  }
+});
+
+// API: 评分
+app.post('/api/game/score', async (req, res) => {
+  const { scorerId, targetId, targetName, scorerName, target, topic } = req.body;
+  
+  if (!scorerId || !targetId) {
+    return res.json({ success: false, error: '缺少必要参数' });
+  }
+  
+  try {
+    const message = `"请评价${scorerName}模仿${target}谈论"${topic}"的表现，从0-10分打分，只输出数字分数，不需要其他内容。"`;
+    const command = `openclaw agent --agent ${scorerId} --message ${message} --deliver`;
+    console.log('[评分]', command);
+    
+    const { stdout, stderr } = await execAsync(command, {
+      encoding: 'utf-8',
+      timeout: 120000,
+      maxBuffer: 10 * 1024 * 1024
+    });
+    
+    let response = stdout ? stdout.trim() : '';
+    
+    // 提取数字分数
+    const scoreMatch = response.match(/\d+/);
+    let score = scoreMatch ? parseInt(scoreMatch[0], 10) : 5;
+    
+    // 确保分数在0-10范围内
+    if (score > 10) score = 10;
+    if (score < 0) score = 0;
+    
+    // 如果返回completed，重试
+    if (response.toLowerCase().includes('completed')) {
+      console.log('[评分返回completed，重试]');
+      const retryResult = await execAsync(command, {
+        encoding: 'utf-8',
+        timeout: 120000,
+        maxBuffer: 10 * 1024 * 1024
+      });
+      response = retryResult.stdout ? retryResult.stdout.trim() : response;
+      const retryScoreMatch = response.match(/\d+/);
+      score = retryScoreMatch ? parseInt(retryScoreMatch[0], 10) : score;
+      if (score > 10) score = 10;
+      if (score < 0) score = 0;
+    }
+    
+    console.log(`[评分结果] ${scorerName} 给 ${targetName} 打分: ${score}`);
+    
+    res.json({ success: true, score });
+  } catch (error) {
+    console.error('[评分失败]', error.message);
+    res.json({ success: false, error: error.message, score: 5 });
+  }
+});
+
 // 静态文件
 app.use(express.static('.'));
 
