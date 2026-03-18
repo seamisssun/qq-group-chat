@@ -569,6 +569,73 @@
       overflow-y: auto;
     }
     
+    /* 游戏状态面板 */
+    .game-status-panel {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .game-status-text {
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 12px;
+      padding: 8px 14px;
+      font-size: 13px;
+      color: #fff;
+      text-align: right;
+    }
+    
+    /* 平均得分显示 */
+    .average-scores {
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 12px;
+      padding: 12px 16px;
+      min-width: 150px;
+      max-height: 300px;
+      overflow-y: auto;
+      z-index: 50;
+    }
+    
+    .average-scores-title {
+      font-size: 14px;
+      font-weight: bold;
+      color: #4a9cd6;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    
+    .average-scores-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    
+    .average-score-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: #fff;
+      padding: 4px 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+    }
+    
+    .average-score-item .name {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .average-score-item .score {
+      font-weight: bold;
+      color: #4a9cd6;
+    }
+    
     .imitative-round-info {
       text-align: center;
       color: #4a9cd6;
@@ -667,6 +734,14 @@
     
     <!-- 模仿游戏界面 -->
     <div class="tab-content" id="tab-imitative" style="display: none;">
+      <!-- 状态文字和平均得分显示区域 -->
+      <div class="game-status-panel" id="game-status-panel">
+        <div class="game-status-text" id="game-status-text">邀请成员加入游戏...</div>
+        <div class="average-scores" id="average-scores" style="display: none;">
+          <div class="average-scores-title">📊 平均得分</div>
+          <div class="average-scores-list" id="average-scores-list"></div>
+        </div>
+      </div>
       <div class="imitative-arena" id="imitative-arena">
         <div class="imitative-center">
           <div class="imitative-center-text">🎯</div>
@@ -680,7 +755,6 @@
         <div class="performance-bubble-content" id="performance-bubble-content"></div>
       </div>
       <div class="imitative-controls">
-        <div class="imitative-info" id="imitative-info">邀请成员加入游戏...</div>
         <div class="imitative-game-inputs" id="imitative-game-inputs" style="display: none;">
           <div class="imitative-input-row">
             <input type="text" id="imitate-target" placeholder="模仿对象（如：特朗普）" />
@@ -1286,7 +1360,7 @@
     // 更新模仿游戏 arena
     function updateImitativeArena() {
       const arena = document.getElementById('imitative-arena');
-      const info = document.getElementById('imitative-info');
+      const info = document.getElementById('game-status-text');
       const gameInputs = document.getElementById('imitative-game-inputs');
       const gameStatus = document.getElementById('imitative-game-status');
       
@@ -1476,8 +1550,8 @@
           contentDiv.textContent = '（表演失败）';
         }
         
-        // 等待一段时间再继续下一个
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // 等待一段时间再继续下一个（至少显示5秒）
+        await new Promise(resolve => setTimeout(resolve, 5000));
         
         // 隐藏气泡，为下一个做准备
         bubble.style.display = 'none';
@@ -1565,8 +1639,8 @@
             contentDiv.textContent = `给 ${targetBot?.name || '未知'} 打分: （打分失败）`;
           }
           
-          // 等待一段时间
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          // 等待一段时间（至少显示3秒）
+          await new Promise(resolve => setTimeout(resolve, 3000));
           
           // 隐藏气泡
           bubble.style.display = 'none';
@@ -1599,6 +1673,9 @@
       if (remaining <= 3) {
         gameState.roundType = 'finished';
         
+        // 显示平均得分
+        displayAverageScores(players);
+        
         // 排序得出冠亚季军
         const finalScores = scores.filter(s => !gameState.eliminated.includes(s.id))
           .sort((a, b) => b.score - a.score);
@@ -1615,6 +1692,47 @@
       }
       
       updateImitativeArena();
+    }
+    
+    // 显示平均得分
+    function displayAverageScores(allPlayers) {
+      const avgScoresContainer = document.getElementById('average-scores');
+      const avgScoresList = document.getElementById('average-scores-list');
+      
+      // 计算平均得分
+      const avgData = [];
+      for (const playerId of allPlayers) {
+        const player = groupBots.find(b => b.id === playerId);
+        const totalScore = gameState.scores[playerId] || 0;
+        // 每一轮有 (n-1) 个评分，假设进行了 gameState.round 轮
+        const roundsPlayed = gameState.round || 1;
+        const expectedRatings = allPlayers.length - 1;
+        const avgScore = roundsPlayed > 0 ? (totalScore / (roundsPlayed * expectedRatings)).toFixed(1) : '0.0';
+        
+        avgData.push({
+          id: playerId,
+          name: player?.name || '未知',
+          emoji: player?.emoji || '🤖',
+          avgScore: avgScore
+        });
+      }
+      
+      // 按平均分排序
+      avgData.sort((a, b) => parseFloat(b.avgScore) - parseFloat(a.avgScore));
+      
+      // 生成HTML
+      let html = '';
+      avgData.forEach(data => {
+        html += `
+          <div class="average-score-item">
+            <span class="name">${data.emoji} ${data.name}</span>
+            <span class="score">${data.avgScore}分</span>
+          </div>
+        `;
+      });
+      
+      avgScoresList.innerHTML = html;
+      avgScoresContainer.style.display = 'block';
     }
     
     // 显示提示
