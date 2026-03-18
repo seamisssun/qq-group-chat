@@ -434,7 +434,7 @@
         <textarea class="chat-input" id="message-input" rows="2" placeholder="输入消息..." disabled></textarea>
         <button class="btn btn-add" onclick="sendMessage()" style="height: 60px;padding: 0 20px;">发送</button>
       </div>
-      <button class="btn btn-primary" id="start-chat-btn" onclick="startChat()" style="margin-top: 10px; width: 100%; display: none;">🎤 开始聊天</button>
+      <button class="btn btn-primary" id="start-chat-btn" onclick="startChat()" style="margin-top: 10px; width: 100%; display: none;">人员准备完毕</button>
     </div>
   </div>
   
@@ -740,6 +740,9 @@
       // 添加系统消息
       addSystemMessage(`${bot.emoji || ''} ${bot.name} 加入了群聊`);
       showToast(`${bot.name} 已加入群聊`, 'success');
+      
+      // 通知后端更新群里agents
+      updateGroupAgents();
     }
     
     // 移出Agent（模拟）
@@ -759,6 +762,30 @@
       // 添加系统消息
       addSystemMessage(`${bot.emoji || ''} ${bot.name} 被移出了群聊`);
       showToast(`${bot.name} 已移出群聊`, 'success');
+      
+      // 通知后端更新群里agents
+      updateGroupAgents();
+    }
+    
+    // 通知后端更新群里agents
+    async function updateGroupAgents() {
+      try {
+        const agentsResponse = await fetch('/api/group/agents', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ agentIds: groupBots.map(b => b.id) })
+        });
+        const agentsData = await agentsResponse.json();
+        
+        // 检查是否需要欢迎新成员
+        if (agentsData.needsWelcome) {
+          document.getElementById('start-chat-btn').style.display = 'block';
+        } else {
+          document.getElementById('start-chat-btn').style.display = 'none';
+        }
+      } catch (e) {
+        console.error('更新agents失败:', e);
+      }
     }
     
     // 添加系统消息
@@ -786,17 +813,25 @@
     
     // 开始聊天（触发欢迎新成员）
     async function startChat() {
+      const btn = document.getElementById('start-chat-btn');
+      btn.disabled = true;
+      btn.textContent = '准备中...';
+      
       try {
         const response = await fetch('/api/group/welcome', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ agents: groupBots })
         });
         const data = await response.json();
         if (data.success) {
-          document.getElementById('start-chat-btn').style.display = 'none';
+          btn.style.display = 'none';
+          showToast('欢迎完成，可以开始聊天了', 'success');
         }
       } catch (e) {
         console.error('开始聊天失败:', e);
+        btn.disabled = false;
+        btn.textContent = '人员准备完毕';
         showToast('开始聊天失败', 'error');
       }
     }

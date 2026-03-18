@@ -8,6 +8,107 @@ import { WebSocketServer, WebSocket } from 'ws';
 
 const execAsync = promisify(exec);
 
+// 性能监控
+const performanceMonitor = {
+  metrics: new Map(),
+  
+  start(operationId) {
+    this.metrics.set(operationId, { startTime: Date.now(), startMemory: process.memoryUsage().heapUsed });
+  },
+  
+  end(operationId) {
+    const metric = this.metrics.get(operationId);
+    if (metric) {
+      const duration = Date.now() - metric.startTime;
+      const endMemory = process.memoryUsage().heapUsed;
+      const memoryDelta = (endMemory - metric.startMemory) / 1024 / 1024;
+      metric.duration = duration;
+      metric.memoryDelta = memoryDelta;
+      metric.endTime = Date.now();
+      console.log(`[性能监控] ${operationId}: ${duration}ms, 内存变化: ${memoryDelta.toFixed(2)}MB`);
+      return metric;
+    }
+    return null;
+  },
+  
+  getMetrics(operationId) {
+    return this.metrics.get(operationId);
+  },
+  
+  clear() {
+    this.metrics.clear();
+  }
+};
+
+// 并发执行Agent欢迎任务
+async function executeWelcomeTask(agent, performanceId, maxRetries = 3) {
+  if (!agent || !agent.id) {
+    return {
+      agent: agent || { id: 'unknown', name: 'Unknown' },
+      success: false,
+      response: null,
+      filteredResponse: '',
+      error: 'Agent ID is missing or invalid'
+    };
+  }
+  
+  performanceMonitor.start(performanceId);
+  
+  const command = `openclaw agent --agent ${agent.id} --message "/new" --deliver`;
+  console.log('[欢迎新成员]', command);
+  
+  let lastError = null;
+  
+  for (let retry = 0; retry < maxRetries; retry++) {
+    try {
+      const { stdout, stderr } = await execAsync(command, {
+        encoding: 'utf-8',
+        timeout: 120000,
+        maxBuffer: 10 * 1024 * 1024
+      });
+      
+      const response = stdout ? stdout.trim() : '';
+      console.log('[欢迎响应]', agent.name, response);
+      
+      // 如果返回completed，继续重试
+      if (response && response.toLowerCase().includes('completed')) {
+        console.log('[欢迎响应包含completed，重试]', agent.name, `(${retry + 1}/${maxRetries})`);
+        lastError = 'completed';
+        continue;
+      }
+      
+      // 成功响应
+      const result = {
+        agent,
+        success: true,
+        response: response,
+        filteredResponse: response ? filterResponse(response) : '',
+        error: null
+      };
+      
+      performanceMonitor.end(performanceId);
+      return result;
+      
+    } catch (error) {
+      console.error('[欢迎Agent失败]', agent.name, error.message);
+      lastError = error.message;
+      // 继续重试
+    }
+  }
+  
+  // 达到最大重试次数，返回失败
+  console.error('[欢迎Agent重试耗尽]', agent.name, '错误:', lastError);
+  performanceMonitor.end(performanceId);
+  
+  return {
+    agent,
+    success: false,
+    response: null,
+    filteredResponse: '',
+    error: lastError || '重试耗尽'
+  };
+}
+
 const app = express();
 const PORT = 18800;
 const server = createServer(app);
@@ -220,92 +321,103 @@ app.post('/api/group/agents', (req, res) => {
   }
 });
 
-// API: 开始欢迎新成员（用户点击开始按钮后触发）
+// API: 开始欢迎新成员（用户点击开始按钮后触发）- 并发执行版本
 app.post('/api/group/welcome', async (req, res) => {
-  if (!groupState.needsWelcome || groupState.addedAgents.length === 0) {
+  const welcomeStartTime = Date.now();
+  
+  // 从请求中获取 agents 列表，或者从 groupState 获取
+  const { agents: requestAgents } = req.body;
+  let addedAgents = requestAgents || groupState.addedAgents;
+  
+  if (!addedAgents || addedAgents.length === 0) {
+    groupState.canUserSpeak = true;
     return res.json({ success: true, message: '没有需要欢迎的成员' });
   }
-
-  const addedAgents = groupState.addedAgents;
-  groupState.pendingAgents = [...addedAgents];
+  
+  // 过滤掉无效的 agents
+  const validAgents = addedAgents.filter(a => a && a.id);
+  
+  if (validAgents.length === 0) {
+    groupState.canUserSpeak = true;
+    return res.json({ success: true, message: '没有有效的agent需要欢迎' });
+  }
+  
+  const totalAgents = validAgents.length;
+  
+  let successCount = 0;
+  let errorCount = 0;
+  
+  groupState.pendingAgents = [...validAgents];
   groupState.needsWelcome = false;
   
   // 通知前端开始欢迎新成员
   sendWSMessage({
     type: 'welcome_start',
-    addedAgents: addedAgents,
-    pendingCount: groupState.pendingAgents.length
+    addedAgents: validAgents,
+    pendingCount: totalAgents
   });
   
-  // 对每个新增agent发送/new命令
-  for (const agent of addedAgents) {
-    try {
-      const command = `openclaw agent --agent ${agent.id} --message "/new" --deliver`;
-      console.log('[欢迎新成员]', command);
+  // 顺序执行所有Agent的欢迎任务（for循环）
+  for (const agent of validAgents) {
+    const safeAgentId = agent.id || `unknown_${Math.random().toString(36).substr(2, 9)}`;
+    const performanceId = `welcome_${safeAgentId}_${Date.now()}`;
+    
+    console.log('[顺序欢迎] 开始执行:', agent.name);
+    
+    const result = await executeWelcomeTask(agent, performanceId);
+    
+    if (result.success) {
+      successCount++;
       
-      const { stdout, stderr } = await execAsync(command, {
-        encoding: 'utf-8',
-        timeout: 120000,
-        maxBuffer: 10 * 1024 * 1024
-      });
-      
-      const response = stdout ? stdout.trim() : '';
-      console.log('[欢迎响应]', agent.name, response);
-      
-      // 如果响应包含 completed，重试一次
-      let finalResponse = response;
-      if (response && response.toLowerCase().includes('completed')) {
-        console.log('[欢迎响应包含completed，重试一次]', agent.name);
-        try {
-          const retryResult = await execAsync(command, {
-            encoding: 'utf-8',
-            timeout: 120000,
-            maxBuffer: 10 * 1024 * 1024
-          });
-          finalResponse = retryResult.stdout ? retryResult.stdout.trim() : response;
-          console.log('[欢迎重试响应]', agent.name, finalResponse);
-        } catch (retryError) {
-          console.error('[欢迎重试失败]', agent.name, retryError.message);
-        }
-      }
-      
-      if (finalResponse) {
-        const filteredResponse = filterResponse(finalResponse);
+      // 发送响应到WebSocket
+      if (result.filteredResponse) {
         sendWSMessage({
           type: 'agent_response',
           agent: agent,
-          response: { from: agent.name, content: filteredResponse },
-          responses: [{ from: agent.name, content: filteredResponse }],
+          response: { from: agent.name, content: result.filteredResponse },
+          responses: [{ from: agent.name, content: result.filteredResponse }],
           done: false
         });
       }
-      
-      // 标记该agent已响应
-      groupState.pendingAgents = groupState.pendingAgents.filter(a => a.id !== agent.id);
-      
-      // 如果所有新增agents都响应了，允许用户发言
-      if (groupState.pendingAgents.length === 0) {
-        groupState.canUserSpeak = true;
-        sendWSMessage({
-          type: 'welcome_done',
-          canUserSpeak: true
-        });
-      }
-    } catch (error) {
-      console.error('[欢迎Agent失败]', agent.name, error.message);
-      groupState.pendingAgents = groupState.pendingAgents.filter(a => a.id !== agent.id);
-      
-      if (groupState.pendingAgents.length === 0) {
-        groupState.canUserSpeak = true;
-        sendWSMessage({
-          type: 'welcome_done',
-          canUserSpeak: true
-        });
-      }
+    } else {
+      errorCount++;
+      console.error(`[顺序欢迎] Agent ${agent.name} 执行失败:`, result.error);
     }
   }
   
-  res.json({ success: true, welcoming: true, addedAgents: addedAgents });
+  // 资源清理 - 清理性能监控数据
+  performanceMonitor.clear();
+  
+  // 更新groupState
+  groupState.pendingAgents = [];
+  groupState.canUserSpeak = true;
+  
+  const welcomeDuration = Date.now() - welcomeStartTime;
+  console.log(`[顺序欢迎] 完成: 总数=${totalAgents}, 成功=${successCount}, 失败=${errorCount}, 耗时=${welcomeDuration}ms`);
+  
+  // 通知前端欢迎完成
+  sendWSMessage({
+    type: 'welcome_done',
+    canUserSpeak: true,
+    summary: {
+      total: totalAgents,
+      success: successCount,
+      error: errorCount,
+      duration: welcomeDuration
+    }
+  });
+  
+  res.json({ 
+    success: true, 
+    welcoming: true, 
+    addedAgents: validAgents,
+    summary: {
+      total: totalAgents,
+      success: successCount,
+      error: errorCount,
+      duration: welcomeDuration
+    }
+  });
 });
 
 // API: 发送消息到随机agent并获取响应
