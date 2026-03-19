@@ -712,7 +712,7 @@ app.post('/api/game/imitate', async (req, res) => {
   }
   
   try {
-    const message = `"请用${target}的语气和风格，模仿${target}的口吻，围绕"${topic}"这个话题，发表一段100字以内的模仿言论。不要包含动作描述。"`;
+    const message = `"请用${target}的语气和风格，模仿${target}的口吻，可以带点原来人物的特色，围绕"${topic}"这个话题，发表一段100字以内的模仿言论。不要包含动作描述。"`;
     const command = `openclaw agent --agent ${agentId} --message ${message} --deliver`;
     console.log('[模仿表演]', command);
     
@@ -744,14 +744,20 @@ app.post('/api/game/imitate', async (req, res) => {
 
 // API: 评分
 app.post('/api/game/score', async (req, res) => {
-  const { scorerId, targetId, targetName, scorerName, target, topic } = req.body;
+  const { scorerId, targetId, targetName, scorerName, target, topic, performance } = req.body;
   
   if (!scorerId || !targetId) {
     return res.json({ success: false, error: '缺少必要参数' });
   }
   
   try {
-    const message = `"请评价${scorerName}模仿${target}谈论"${topic}"的表现，从0-10分打分，只输出数字分数，不需要其他内容。"`;
+    let message;
+    if (performance && performance.trim()) {
+      message = `"请评价${scorerName}模仿${target}谈论"${topic}"的表演：\n\n表演内容：${performance}\n\n请从0-10分打分，只输出数字分数，0分最差，10分最好，不需要其他内容。"`;
+    } else {
+      message = `"请评价${scorerName}模仿${target}谈论"${topic}"的表现，从0-10分打分，只输出数字分数，不需要其他内容。"`;
+    }
+    
     const command = `openclaw agent --agent ${scorerId} --message ${message} --deliver`;
     console.log('[评分]', command);
     

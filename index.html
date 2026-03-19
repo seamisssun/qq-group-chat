@@ -636,20 +636,6 @@
       color: #4a9cd6;
     }
     
-    .imitative-round-info {
-      text-align: center;
-      color: #4a9cd6;
-      font-size: 14px;
-      margin-bottom: 8px;
-    }
-    
-    .imitative-scores {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      justify-content: center;
-    }
-    
     .imitative-score-item {
       background: rgba(74, 156, 214, 0.2);
       padding: 6px 12px;
@@ -662,6 +648,19 @@
       background: rgba(255, 77, 79, 0.2);
       text-decoration: line-through;
       opacity: 0.6;
+    }
+    
+    .imitative-agent.eliminated {
+      opacity: 0.5;
+    }
+    
+    .imitative-agent.eliminated .imitative-agent-avatar {
+      border-color: #666;
+      filter: grayscale(50%);
+    }
+    
+    .imitative-agent.eliminated .imitative-agent-name {
+      text-decoration: line-through;
     }
     
     /* 空状态 */
@@ -761,10 +760,6 @@
             <input type="text" id="imitate-topic" placeholder="话题（如：如何拯救地球）" />
           </div>
           <button class="btn btn-primary" id="start-round-btn" onclick="startRound()">开始一轮</button>
-        </div>
-        <div class="imitative-game-status" id="imitative-game-status" style="display: none;">
-          <div class="imitative-round-info" id="imitative-round-info"></div>
-          <div class="imitative-scores" id="imitative-scores"></div>
         </div>
       </div>
     </div>
@@ -1341,8 +1336,25 @@
       if (targetContent) targetContent.style.display = 'flex';
       
       if (tab === 'imitative') {
+        // 如果没有游戏在进行或者是游戏结束了，重置游戏状态
+        if (gameState.round === 0 || gameState.roundType === 'finished') {
+          resetGameState();
+        }
         updateImitativeArena();
       }
+    }
+    
+    // 重置游戏状态
+    function resetGameState() {
+      gameState.round = 0;
+      gameState.players = [];
+      gameState.scores = {};
+      gameState.roundScores = {};
+      gameState.performances = {};
+      gameState.eliminated = [];
+      gameState.currentTarget = '';
+      gameState.currentTopic = '';
+      gameState.roundType = 'waiting';
     }
     
     // 游戏状态
@@ -1351,10 +1363,12 @@
       round: 0,
       currentSpeaker: 0,
       scores: {},
+      roundScores: {},
+      performances: {},
       eliminated: [],
       currentTarget: '',
       currentTopic: '',
-      roundType: 'waiting' // waiting, performing, scoring, finished
+      roundType: 'waiting'
     };
     
     // 更新模仿游戏 arena
@@ -1362,7 +1376,6 @@
       const arena = document.getElementById('imitative-arena');
       const info = document.getElementById('game-status-text');
       const gameInputs = document.getElementById('imitative-game-inputs');
-      const gameStatus = document.getElementById('imitative-game-status');
       
       // 清除旧的agent元素
       const oldAgents = arena.querySelectorAll('.imitative-agent');
@@ -1371,7 +1384,6 @@
       if (!groupBots || groupBots.length < 2) {
         info.textContent = '至少需要2位成员才能开始游戏';
         gameInputs.style.display = 'none';
-        gameStatus.style.display = 'none';
         return;
       }
       
@@ -1380,10 +1392,8 @@
       // 显示游戏输入框
       if (gameState.roundType === 'waiting' || gameState.roundType === 'finished') {
         gameInputs.style.display = 'block';
-        gameStatus.style.display = 'none';
       } else {
         gameInputs.style.display = 'none';
-        gameStatus.style.display = 'block';
       }
       
       // 计算圆的位置
@@ -1411,42 +1421,6 @@
         
         arena.appendChild(agentEl);
       });
-      
-      // 更新游戏状态显示
-      updateGameStatus();
-    }
-    
-    // 更新游戏状态显示
-    function updateGameStatus() {
-      const roundInfo = document.getElementById('imitative-round-info');
-      const scoresDiv = document.getElementById('imitative-scores');
-      
-      if (gameState.roundType === 'waiting') {
-        roundInfo.textContent = `第 ${gameState.round} 轮 - 等待开始`;
-      } else if (gameState.roundType === 'performing') {
-        const currentPlayer = groupBots.find(b => b.id === gameState.players[gameState.currentSpeaker]);
-        roundInfo.textContent = `第 ${gameState.round} 轮 - ${currentPlayer?.name || '?'} 正在表演`;
-      } else if (gameState.roundType === 'scoring') {
-        roundInfo.textContent = `第 ${gameState.round} 轮 - 评分中`;
-      } else if (gameState.roundType === 'finished') {
-        if (gameState.players.length === 3) {
-          roundInfo.textContent = '🏆 冠亚季军已产生！';
-        } else {
-          roundInfo.textContent = '游戏结束';
-        }
-      }
-      
-      // 显示分数
-      scoresDiv.innerHTML = '';
-      groupBots.forEach(bot => {
-        if (!gameState.eliminated.includes(bot.id)) {
-          const score = gameState.scores[bot.id] || 0;
-          const item = document.createElement('div');
-          item.className = 'imitative-score-item';
-          item.textContent = `${bot.emoji || ''} ${bot.name}: ${score}分`;
-          scoresDiv.appendChild(item);
-        }
-      });
     }
     
     // 开始一轮
@@ -1472,9 +1446,19 @@
         gameState.round = 1;
         gameState.players = groupBots.map(b => b.id);
         gameState.scores = {};
+        gameState.roundScores = {};
+        gameState.performances = {};
         gameState.eliminated = [];
         groupBots.forEach(b => {
           gameState.scores[b.id] = 0;
+          gameState.roundScores[b.id] = 0;
+          gameState.performances[b.id] = '';
+        });
+      } else {
+        // 每轮开始前，重置当前轮得分
+        const activePlayers = gameState.players.filter(id => !gameState.eliminated.includes(id));
+        activePlayers.forEach(id => {
+          gameState.roundScores[id] = 0;
         });
       }
       
@@ -1498,7 +1482,6 @@
       
       for (let i = 0; i < players.length; i++) {
         gameState.currentSpeaker = i;
-        updateGameStatus();
         
         const playerId = players[i];
         const player = groupBots.find(b => b.id === playerId);
@@ -1535,6 +1518,7 @@
             
             if (data.success && data.response) {
               responseText = data.response;
+              gameState.performances[playerId] = responseText;
               // 更新气泡内容
               performerSpan.textContent = `${player?.emoji || ''} ${player?.name || '未知'}`;
               contentDiv.textContent = responseText;
@@ -1562,7 +1546,6 @@
       
       // 表演完毕，进入评分阶段
       gameState.roundType = 'scoring';
-      updateGameStatus();
       
       // 切换回模仿游戏界面
       switchTab('imitative');
@@ -1591,6 +1574,7 @@
         
         for (const targetId of targets) {
           const targetBot = groupBots.find(b => b.id === targetId);
+          const targetPerformance = gameState.performances[targetId] || '';
           
           // 显示评分气泡
           performerSpan.textContent = `${scorer?.emoji || ''} ${scorer?.name || '未知'} 正在打分...`;
@@ -1614,7 +1598,8 @@
                   targetName: targetBot?.name || '未知',
                   scorerName: scorer?.name || '未知',
                   target: target,
-                  topic: topic
+                  topic: topic,
+                  performance: targetPerformance
                 })
               });
               
@@ -1623,10 +1608,14 @@
               if (data.success && data.score !== undefined) {
                 scoreResult = data.score;
                 gameState.scores[targetId] = (gameState.scores[targetId] || 0) + scoreResult;
+                gameState.roundScores[targetId] = (gameState.roundScores[targetId] || 0) + scoreResult;
                 
                 // 显示评分结果
                 performerSpan.textContent = `${scorer?.emoji || ''} ${scorer?.name || '未知'}`;
                 contentDiv.textContent = `给 ${targetBot?.name || '未知'} 打分: ${scoreResult}分`;
+                
+                // 实时更新分数显示
+                updateScoresDisplay();
               } else if (data.error || (data.response && data.response.toLowerCase().includes('completed'))) {
                 console.log(`[打分重试] ${scorer?.name} 给 ${targetBot?.name} 第${attempts}次尝试`);
                 await new Promise(resolve => setTimeout(resolve, 1000));
@@ -1652,7 +1641,6 @@
       
       // 表演完毕，进入评分阶段
       gameState.roundType = 'scoring';
-      updateGameStatus();
       
       // 显示当前所有玩家的得分
       showCurrentScores(players);
@@ -1660,13 +1648,13 @@
       // 等待显示分数后，淘汰最低分
       await new Promise(resolve => setTimeout(resolve, 3000));
       
-      // 淘汰最低分
+      // 淘汰最低分（使用当前轮得分）
       const activePlayers = players.filter(id => !gameState.eliminated.includes(id));
-      const scores = activePlayers.map(id => ({ id, score: gameState.scores[id] || 0 }));
-      scores.sort((a, b) => a.score - b.score);
+      const roundScores = activePlayers.map(id => ({ id, score: gameState.roundScores[id] || 0 }));
+      roundScores.sort((a, b) => a.score - b.score);
       
-      if (scores.length > 3) {
-        const eliminated = scores[0];
+      if (roundScores.length > 3) {
+        const eliminated = roundScores[0];
         gameState.eliminated.push(eliminated.id);
         showToast(`${groupBots.find(b => b.id === eliminated.id)?.name} 被淘汰了！`, 'info');
       }
@@ -1675,15 +1663,16 @@
       gameState.roundType = 'waiting';
       
       // 检查是否结束
-      const remaining = activePlayers.length - (gameState.eliminated.includes(scores[0].id) ? 1 : 0);
+      const remaining = activePlayers.length - (gameState.eliminated.includes(roundScores[0].id) ? 1 : 0);
       if (remaining <= 3) {
         gameState.roundType = 'finished';
         
         // 显示平均得分
         displayAverageScores(players);
         
-        // 排序得出冠亚季军
-        const finalScores = scores.filter(s => !gameState.eliminated.includes(s.id))
+        // 排序得出冠亚季军（使用累积总分）
+        const finalScores = activePlayers.filter(id => !gameState.eliminated.includes(id))
+          .map(id => ({ id, score: gameState.scores[id] || 0 }))
           .sort((a, b) => b.score - a.score);
         
         let resultText = '🏆 最终排名：\n';
@@ -1707,19 +1696,21 @@
       const avgScoresTitle = avgScoresContainer.querySelector('.average-scores-title');
       
       // 修改标题
-      avgScoresTitle.textContent = '📊 当前得分';
+      avgScoresTitle.textContent = '📊 当前轮得分';
       
-      // 获取当前得分
+      // 获取当前轮得分（排除已淘汰的）
       const scoreData = [];
       for (const playerId of allPlayers) {
+        if (gameState.eliminated.includes(playerId)) continue;
+        
         const player = groupBots.find(b => b.id === playerId);
-        const totalScore = gameState.scores[playerId] || 0;
+        const roundScore = gameState.roundScores[playerId] || 0;
         
         scoreData.push({
           id: playerId,
           name: player?.name || '未知',
           emoji: player?.emoji || '🤖',
-          score: totalScore
+          score: roundScore
         });
       }
       
@@ -1729,10 +1720,51 @@
       // 生成HTML
       let html = '';
       scoreData.forEach(data => {
-        const isEliminated = gameState.eliminated.includes(data.id);
-        const style = isEliminated ? 'text-decoration: line-through; opacity: 0.5;' : '';
         html += `
-          <div class="average-score-item" style="${style}">
+          <div class="average-score-item">
+            <span class="name">${data.emoji} ${data.name}</span>
+            <span class="score">${data.score}分</span>
+          </div>
+        `;
+      });
+      
+      avgScoresList.innerHTML = html;
+      avgScoresContainer.style.display = 'block';
+    }
+    
+    // 实时更新分数显示（评分过程中调用）
+    function updateScoresDisplay() {
+      const avgScoresContainer = document.getElementById('average-scores');
+      const avgScoresList = document.getElementById('average-scores-list');
+      const avgScoresTitle = avgScoresContainer.querySelector('.average-scores-title');
+      
+      // 设置标题
+      avgScoresTitle.textContent = '📊 当前轮得分';
+      
+      // 获取当前轮得分（排除已淘汰的）
+      const scoreData = [];
+      for (const playerId of gameState.players) {
+        if (gameState.eliminated.includes(playerId)) continue;
+        
+        const player = groupBots.find(b => b.id === playerId);
+        const roundScore = gameState.roundScores[playerId] || 0;
+        
+        scoreData.push({
+          id: playerId,
+          name: player?.name || '未知',
+          emoji: player?.emoji || '🤖',
+          score: roundScore
+        });
+      }
+      
+      // 按得分排序
+      scoreData.sort((a, b) => b.score - a.score);
+      
+      // 生成HTML
+      let html = '';
+      scoreData.forEach(data => {
+        html += `
+          <div class="average-score-item">
             <span class="name">${data.emoji} ${data.name}</span>
             <span class="score">${data.score}分</span>
           </div>
@@ -1752,15 +1784,29 @@
       // 修改标题
       avgScoresTitle.textContent = '📊 平均得分';
       
-      // 计算平均得分
+      // 计算每个玩家的平均得分
       const avgData = [];
+      const initialCount = allPlayers.length;
+      const roundsPlayed = gameState.round - 1; // 实际完成的轮数
+      
       for (const playerId of allPlayers) {
         const player = groupBots.find(b => b.id === playerId);
         const totalScore = gameState.scores[playerId] || 0;
-        // 每一轮有 (n-1) 个评分，假设进行了 gameState.round 轮
-        const roundsPlayed = gameState.round || 1;
-        const expectedRatings = allPlayers.length - 1;
-        const avgScore = roundsPlayed > 0 ? (totalScore / (roundsPlayed * expectedRatings)).toFixed(1) : '0.0';
+        
+        // 计算该玩家参与的总评分次数
+        // 每一轮的存活人数 = 初始人数 - 已淘汰人数
+        // 被淘汰的玩家参与了他们被淘汰那轮的所有评分
+        const eliminatedIndex = gameState.eliminated.indexOf(playerId);
+        const roundsParticipated = eliminatedIndex === -1 ? roundsPlayed : eliminatedIndex + 1;
+        
+        // 计算总评分次数：第r轮的评分次数 = (初始人数 - r + 1) - 1
+        let ratingCount = 0;
+        for (let r = 1; r <= roundsParticipated; r++) {
+          const playersInRound = initialCount - (r - 1);
+          ratingCount += playersInRound - 1;
+        }
+        
+        const avgScore = ratingCount > 0 ? (totalScore / ratingCount).toFixed(1) : '0.0';
         
         avgData.push({
           id: playerId,
